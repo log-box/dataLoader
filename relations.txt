@@ -1,0 +1,20 @@
+текст вопроса[1] 			====	question
+картинка[2]					====	linkOfPicture
+правильный ответ[3]			====	rightAnswer
+комментарий[4]				====	commentForJudge
+описание[5]					====	aboutQuestion
+источник информации[6]		====	link
+неправильный ответ 1[7]		====	wrongAnswerOne
+неправильный ответ 2[8]		====	wrongAnswerTwo
+неправильный ответ 3[9]		====	wrongAnswerThree
+тема[10]					====	themeOfQuestion
+категория[11]				====	questionCategory
+раздел[12]					====	sectionOfQuestion
+сложность(5) - пусто[13]	====	undefined
+сложность(10)[14]			====	complexityOfQuestion
+сложность(15) - пусто[15]	====	undefined
+автор[16]					====	user
+дата подачи вопроса[17]		====	date_ques_sub
+рецензент[18]				====	reviewer (Другая таблица)
+дата рецензии[19]			====	reviewer_date (Другая таблица)
+дата включения в БД[20]		====	base_date
