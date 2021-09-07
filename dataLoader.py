@@ -2,6 +2,7 @@ import csv
 
 import psycopg2
 
+
 # conn = psycopg2.connect(connection)
 # cursor = conn.cursor()
 # items = pickle.load(open(pickle_file,"rb"))
@@ -15,7 +16,6 @@ import psycopg2
 #     data = (info, city, price)
 #
 #     cursor.execute(query, data)
-
 
 
 def csv_reader(file_obj):
@@ -37,48 +37,35 @@ def csv_reader(file_obj):
     for string in reader:
         if string[0] != '#':
             cur = con.cursor()
-            cur.execute(
-                f'''
-                INSERT INTO dataLoader_questions(
-                question,
-                linkOfPicture,
-                rightAnswer,
-                commentForJudge,
-                aboutQuestion,
-                link,
-                wrongAnswerOne,
-                wrongAnswerTwo,
-                wrongAnswerThree,
-                themeOfQuestion,
-                questionCategory,
-                sectionOfQuestion,
-                complexityOfQuestion,
-                user,
-                date_ques_sub,
-                base_date
-                )
-                VALUES (
-                {string[1]}, 
-                {string[2]}, 
-                {string[3]}, 
-                {string[4]}, 
-                {string[5]},
-                {string[6]},
-                {string[7]},
-                {string[8]},
-                {string[9]},
-                {string[10]},
-                {string[11]},
-                {string[12]},
-                {string[14]},
-                {string[16]},
-                {string[17]},
-                {string[20]}
-                )
-                '''
-            )
+            question = string[1]
+            linkOfPicture = string[2]
+            rightAnswer = string[3]
+            commentForJudge = string[4]
+            aboutQuestion = string[5]
+            link = string[6]
+            wrongAnswerOne = string[7]
+            wrongAnswerTwo = string[8]
+            wrongAnswerThree = string[9]
+            themeOfQuestion = string[10]
+            questionCategory = string[11]
+            sectionOfQuestion = string[12]
+            complexityOfQuestion = string[14]
+            user = string[16]
+            approve = 1
+            date_ques_sub = string[17]
+            base_date = string[20]
+            sqlData = 'INSERT INTO "dataLoader_questions" (question,"linkOfPicture","rightAnswer","commentForJudge","aboutQuestion",link,"wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree","themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user",approve,date_ques_sub,base_date) VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'
+            data = (
+            question, linkOfPicture, rightAnswer, commentForJudge, aboutQuestion, link, wrongAnswerOne, wrongAnswerTwo,
+            wrongAnswerThree, themeOfQuestion, questionCategory, sectionOfQuestion, complexityOfQuestion, user, approve,
+            date_ques_sub, base_date)
+
+            cur.execute(sqlData, data)
             print(f'Строка№ {i} записана успешно')
+            print(f'{string[1]}')
+            print(f'{string[2]}')
             i += 1
+            con.commit()
         #     print(f'==============================ЗАПИСЬ[{i}]==============================')
         #     print(f'question: {string[1]}')
         #     print(f'linkOfPicture: {string[2]}')
@@ -99,15 +86,14 @@ def csv_reader(file_obj):
         #     print(f'=======================================================================')
         #     i += 1
 
-    con.commit()
+
     con.close()
+
 
 if __name__ == "__main__":
     csv_path = "data.csv"
     with open(csv_path, "r", encoding='utf-8', newline='') as f_obj:
         csv_reader(f_obj)
-
-
 
     # cur.execute('''drop TABLE if exists test ;''')
     #
@@ -118,7 +104,6 @@ if __name__ == "__main__":
     #      COURSE CHAR(50),
     #      DEPARTMENT CHAR(50));''')
     #
-
 
     #
     # print("Table created successfully")
