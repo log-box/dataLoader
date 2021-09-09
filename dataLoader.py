@@ -4,12 +4,13 @@ import psycopg2
 from psycopg2 import Error
 
 USER = 'postgres'
-# USER = 'postgress'
+# USER = 'postgress' https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
 PASSWORD = '1'
 DATABASE = 'dataloader'
 PORT = '5432'
 HOST = '127.0.0.1'
 CSV_PATH = 'data.csv'
+CSV_FILE_DATA = ''
 
 
 def clear_db():
@@ -41,12 +42,21 @@ def clear_db():
             print('PostgreSQL connection closed')
 
 
-def data_loader(csv_object):
-    pass
+def read_csv_file():
+    csv_path = CSV_PATH
+    try:
+        with open(csv_path, "r", encoding='utf-8', newline='') as f_obj:
+            reader = csv.reader(f_obj, skipinitialspace=True)
+            CSV_FILE_DATA = list(reader)
+        if CSV_FILE_DATA[0][0] != '#':
+            return False
+        else:
+            return CSV_FILE_DATA
+    except FileNotFoundError:
+        print(f'csv-file [{CSV_PATH}] not found :(')
 
-def csv_reader(file_obj):
-    # connection = False
-    # cursor = False
+
+def main():
     try:
         connection = psycopg2.connect(
             database=DATABASE,
@@ -56,10 +66,10 @@ def csv_reader(file_obj):
             port=PORT
         )
         cursor = connection.cursor()
-        reader = csv.reader(file_obj, skipinitialspace=True)
-        if next(reader)[0] != '#':
-            print(f'Error in parsing file [{file_obj.name}]:\n first item.value must be [#]\n '
-                  f'first string must be without DB-data')
+        reader = read_csv_file()
+        if not reader:
+            print(f'Error in parsing file [{CSV_PATH}]:\n first cell value must be [#]\n '
+                  f'first string must be without any data')
         else:
             try:
                 postgreSelectAll = 'select * from "dataLoader_questions"'
@@ -67,11 +77,11 @@ def csv_reader(file_obj):
                 sqlData = cursor.fetchall()
                 print(len(sqlData))
                 if len(sqlData) == 0:
-                    #  Database is empty. Loading DATA into it
+                    print('Database is empty. Loading DATA into it')
                     i = 1
                     for string in reader:
                         if string[0] != '#':
-                            # cur = con.cursor()
+                            id = string[0]
                             question = string[1]
                             rightAnswer = string[3]
                             commentForJudge = string[4]
@@ -88,12 +98,12 @@ def csv_reader(file_obj):
                             approve = 1
                             date_ques_sub = string[17]
                             base_date = string[20]
-                            sqlData = 'INSERT INTO "dataLoader_questions" (question,"rightAnswer","commentForJudge","aboutQuestion",' \
+                            sqlData = 'INSERT INTO "dataLoader_questions" (id, question,"rightAnswer","commentForJudge","aboutQuestion",' \
                                       'link,"wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree","themeOfQuestion","questionCategory"' \
                                       ',"sectionOfQuestion","complexityOfQuestion","user",approve,date_ques_sub,base_date) ' \
-                                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'
+                                      'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'
                             data = (
-                                question, rightAnswer, commentForJudge, aboutQuestion, link, wrongAnswerOne,
+                                id, question, rightAnswer, commentForJudge, aboutQuestion, link, wrongAnswerOne,
                                 wrongAnswerTwo,
                                 wrongAnswerThree, themeOfQuestion, questionCategory, sectionOfQuestion,
                                 complexityOfQuestion, user, approve,
@@ -103,11 +113,9 @@ def csv_reader(file_obj):
                             i += 1
                             connection.commit()
                 else:
-                    for item in range(len(sqlData)-1):
+                    for item in range(len(sqlData) - 1):
                         print(sqlData[item][0])
-                # for row in sqlData:
-                #     print(row[1])
-                # for string in reader:
+
 
             finally:
                 pass
@@ -122,9 +130,5 @@ def csv_reader(file_obj):
 
 
 if __name__ == "__main__":
-    csv_path = CSV_PATH
-    with open(csv_path, "r", encoding='utf-8', newline='') as f_obj:
-        csv_reader(f_obj)
+    main()
     # clear_db()
-
-
