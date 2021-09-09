@@ -4,7 +4,7 @@ import psycopg2
 from psycopg2 import Error
 
 USER = 'postgres'
-# USER = 'postgress' https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
+# USER = 'postgress' https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql  сравнивать значения с 2 по 13
 PASSWORD = '1'
 DATABASE = 'dataloader'
 PORT = '5432'
@@ -51,6 +51,7 @@ def read_csv_file():
         if CSV_FILE_DATA[0][0] != '#':
             return False
         else:
+            CSV_FILE_DATA.pop(0)
             return CSV_FILE_DATA
     except FileNotFoundError:
         print(f'csv-file [{CSV_PATH}] not found :(')
@@ -114,7 +115,8 @@ def main():
                             connection.commit()
                 else:
                     for item in range(len(sqlData) - 1):
-                        print(sqlData[item][0])
+                        if sqlData[item][0] == int(reader[item][0]):
+                            print(f'DB record ID {sqlData[item][0]} and ID {reader[item][0]} from CSV file are match')
 
 
             finally:
