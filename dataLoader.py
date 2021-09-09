@@ -14,7 +14,9 @@ CSV_FILE_DATA = ''
 
 
 def clear_db():
+    connection = ''
     try:
+
         connection = psycopg2.connect(
             database=DATABASE,
             user=USER,
@@ -58,6 +60,9 @@ def read_csv_file():
 
 
 def main():
+    connection = ''
+    i = 1
+    reader = ''
     try:
         connection = psycopg2.connect(
             database=DATABASE,
@@ -79,7 +84,6 @@ def main():
                 print(len(sqlData))
                 if len(sqlData) == 0:
                     print('Database is empty. Loading DATA into it')
-                    i = 1
                     for string in reader:
                         if string[0] != '#':
                             id = string[0]
@@ -114,16 +118,25 @@ def main():
                             i += 1
                             connection.commit()
                 else:
+                    fields = (
+                    "id", "question", "rightAnswer", "commentForJudge", "aboutQuestion", "link", "wrongAnswerOne",
+                    "wrongAnswerTwo", "wrongAnswerThree", "themeOfQuestion", "questionCategory"
+                    , "sectionOfQuestion", "complexityOfQuestion", "user", "approve", "date_ques_sub", "base_date")
                     for item in range(len(sqlData) - 1):
                         if sqlData[item][0] == int(reader[item][0]):
-                            print(f'DB record ID {sqlData[item][0]} and ID {reader[item][0]} from CSV file are match')
+                            for i in range(2, 14):
+                                if sqlData[item][i] != reader[item][i]:
+                                    sqlData = 'Update "dataLoader_questions" set price = %s where id = %s'
+                            # print(f'DB record ID {sqlData[item][0]} and ID {reader[item][0]} from CSV file are match')
 
 
             finally:
                 pass
 
     except (Exception, Error) as error:
-        print('DB connection error', error)
+        if i < len(reader):
+            print(f'Loading is not completed\nTotal records to load: [{len(reader)}]\nLoaded [{i - 1}] records')
+        print('Database or connection error:', error)
     finally:
         if connection:
             cursor.close()
