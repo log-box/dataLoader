@@ -12,11 +12,14 @@ DATABASE_TABLE = "dataLoader_questions"
 PORT = '5432'
 HOST = '127.0.0.1'
 CSV_PATH = 'data.csv'
+
 connection = ''
 clear_database_records_count = 1
 new_records_count = 0
 reader = ''
 count = 0
+
+
 # https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
 
 def row_recording(string, connection, cursor):
@@ -86,6 +89,46 @@ def clear_db():
             print('PostgreSQL connection closed')
 
 
+def check_csv_file():
+    try:
+        connection = psycopg2.connect(
+            database=DATABASE,
+            user=USER,
+            password=PASSWORD,
+            host=HOST,
+            port=PORT
+        )
+        cursor = connection.cursor()
+        sql_structure_request = "select column_name,  character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name ='dataLoader_questions';"
+        cursor.execute(sql_structure_request)
+        sqlTableDataStructure = cursor.fetchall()
+        character_maximum_length = []
+        for item in sqlTableDataStructure:
+            character_maximum_length.append(item)
+        character_maximum_length = dict(character_maximum_length)
+        file_list_data, file_dict_data = read_csv_file()
+        errors = []
+        for dicts in file_dict_data:
+            for key, value in dicts.items():
+                if type(value) is str:
+                    value_lenght = len(value)
+                    if character_maximum_length[key] < value_lenght:
+                        errors.append(
+                            f'error in row [{dicts["id"]}] field [{key}] with [{len(value)}] witch more than [{character_maximum_length[key]}] char length in database field')
+        if errors:
+            with open('errors.txt', "w", encoding='utf-8') as log_file:
+                for line in errors:
+                    log_file.write(line + '\n')
+                print('Errors in [errors.txt]')
+    except Exception:
+        print('Something gone wrong')
+    finally:
+        if connection:
+            cursor.close()
+            connection.close()
+            print('PostgreSQL connection closed.')
+
+
 def read_csv_file():
     #  Reading CSV file and return list of lists and list of dicts
     csv_path = CSV_PATH
@@ -142,6 +185,7 @@ def main():
             port=PORT
         )
         cursor = connection.cursor()
+
         reader, reader_dicts = read_csv_file()
         if not reader:
             print(f'Error in parsing file [{CSV_PATH}]:\n first cell value must be [#]\n '
@@ -156,9 +200,10 @@ def main():
                 sleep(3)
                 for string in reader:
                     if string[0] != '#':
-                        row_recording(string,connection,cursor)
+                        row_recording(string, connection, cursor)
                         clear_database_records_count += 1
-                print(f'Total row{"s" if clear_database_records_count > 1 else ""} {clear_database_records_count} successfully added')
+                print(
+                    f'Total row{"s" if clear_database_records_count > 1 else ""} {clear_database_records_count} successfully added')
             else:
                 #  Data base not empty
                 print(f'Records in database: {len(sqlData)}')
@@ -212,5 +257,6 @@ def main():
 
 
 if __name__ == "__main__":
+    check_csv_file()
     main()
     # clear_db()
