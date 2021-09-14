@@ -107,6 +107,7 @@ def check_csv_file():
             character_maximum_length.append(item)
         character_maximum_length = dict(character_maximum_length)
         file_list_data, file_dict_data = read_csv_file()
+
         errors = []
         for dicts in file_dict_data:
             for key, value in dicts.items():
@@ -120,8 +121,8 @@ def check_csv_file():
                 for line in errors:
                     log_file.write(line + '\n')
                 print('Errors in [errors.txt]')
-    except Exception:
-        print('Something gone wrong')
+    # except Exception:
+    #     print('Something gone wrong')
     finally:
         if connection:
             cursor.close()
@@ -137,7 +138,7 @@ def read_csv_file():
             reader = csv.reader(f_obj, skipinitialspace=True)
             CSV_FILE_DATA = list(reader)
         if CSV_FILE_DATA[0][0] != '#':
-            return False
+            return False,False
         else:
             CSV_FILE_DATA.pop(0)
             CSV_FILE_DATA_LIST_OF_DICTS = []
@@ -189,7 +190,7 @@ def main():
         reader, reader_dicts = read_csv_file()
         if not reader:
             print(f'Error in parsing file [{CSV_PATH}]:\n first cell value must be [#]\n '
-                  f'first string must be without any data')
+                  f'first string must be without any data\n run [check_csv_file] command ')
         else:
             postgreSelectAll = 'select * from "dataLoader_questions" order by "id"'
             cursor.execute(postgreSelectAll)
@@ -258,5 +259,5 @@ def main():
 
 if __name__ == "__main__":
     check_csv_file()
-    main()
+    # main()
     # clear_db()
