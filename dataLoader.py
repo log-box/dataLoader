@@ -13,45 +13,22 @@ PORT = '5432'
 HOST = '127.0.0.1'
 CSV_PATH = 'data.csv'
 
+
 connection = ''
 clear_database_records_count = 1
 new_records_count = 0
-reader = ''
 count = 0
 
 
 # https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
 
-def row_recording(string, connection, cursor):
+def row_recording(row, connection, cursor):
     #  Recording new row in DATABASE_TABLE
-    global clear_database_records_count
-    id = string[0]
-    question = string[1]
-    rightAnswer = string[3]
-    commentForJudge = string[4]
-    aboutQuestion = string[5]
-    link = string[6]
-    wrongAnswerOne = string[7]
-    wrongAnswerTwo = string[8]
-    wrongAnswerThree = string[9]
-    themeOfQuestion = string[10]
-    questionCategory = string[11]
-    sectionOfQuestion = string[12]
-    complexityOfQuestion = string[14]
-    user = string[16]
-    approve = 1
-    date_ques_sub = string[17]
-    base_date = string[20]
-    sql_query = 'INSERT INTO "dataLoader_questions" (id, question,"rightAnswer","commentForJudge","aboutQuestion",' \
-                'link,"wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree","themeOfQuestion","questionCategory"' \
-                ',"sectionOfQuestion","complexityOfQuestion","user",approve,date_ques_sub,base_date) ' \
-                'VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s);'
-    data = (
-        id, question, rightAnswer, commentForJudge, aboutQuestion, link, wrongAnswerOne,
-        wrongAnswerTwo,
-        wrongAnswerThree, themeOfQuestion, questionCategory, sectionOfQuestion,
-        complexityOfQuestion, user, approve,
-        date_ques_sub, base_date)
+    sql_query = 'INSERT INTO "dataLoader_questions" ("id", "question","linkOfPicture","rightAnswer",' \
+                '"commentForJudge","aboutQuestion","link","wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree",' \
+                '"themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user","approve",' \
+                '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
+    data = tuple(row.values())
     cursor.execute(sql_query, data)
     connection.commit()
 
@@ -90,6 +67,7 @@ def clear_db():
 
 
 def check_csv_file():
+    global connection
     try:
         connection = psycopg2.connect(
             database=DATABASE,
@@ -101,13 +79,11 @@ def check_csv_file():
         cursor = connection.cursor()
         sql_structure_request = "select column_name,  character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name ='dataLoader_questions';"
         cursor.execute(sql_structure_request)
-        sqlTableDataStructure = cursor.fetchall()
-        character_maximum_length = []
-        for item in sqlTableDataStructure:
-            character_maximum_length.append(item)
-        character_maximum_length = dict(character_maximum_length)
-        file_list_data, file_dict_data = read_csv_file()
-
+        sql_table_data_structure = cursor.fetchall()
+        character_maximum_length = dict([item for item in sql_table_data_structure])
+        file_dict_data = read_csv_file()
+        if not file_dict_data:
+            return print('CSV file error in first row. Check first cell value, must be [#]')
         errors = []
         for dicts in file_dict_data:
             for key, value in dicts.items():
@@ -121,13 +97,14 @@ def check_csv_file():
                 for line in errors:
                     log_file.write(line + '\n')
                 print('Errors in [errors.txt]')
-    # except Exception:
-    #     print('Something gone wrong')
+        else:
+            print('Cheking CSV file is complete. File is correct')
+    except (Exception, Error) as error:
+        print(f'Database or connection error\n{error}')
     finally:
         if connection:
             cursor.close()
             connection.close()
-            print('PostgreSQL connection closed.')
 
 
 def read_csv_file():
@@ -136,13 +113,13 @@ def read_csv_file():
     try:
         with open(csv_path, "r", encoding='utf-8', newline='') as f_obj:
             reader = csv.reader(f_obj, skipinitialspace=True)
-            CSV_FILE_DATA = list(reader)
-        if CSV_FILE_DATA[0][0] != '#':
-            return False,False
+            csv_file_data = list(reader)
+        if csv_file_data[0][0] != '#':
+            return False
         else:
-            CSV_FILE_DATA.pop(0)
-            CSV_FILE_DATA_LIST_OF_DICTS = []
-            for item in CSV_FILE_DATA:
+            csv_file_data.pop(0)
+            csv_file_data_list_of_dicts = []
+            for item in csv_file_data:
                 date_ques_sub = datetime.datetime.strptime(item[17], '%d.%m.%Y').strftime('%Y-%m-%d')
                 base_date = datetime.datetime.strptime(item[20], '%d.%m.%Y').strftime('%Y-%m-%d')
                 elm_dict = dict(
@@ -165,8 +142,8 @@ def read_csv_file():
                     date_ques_sub=datetime.datetime.strptime(date_ques_sub, '%Y-%m-%d').date(),
                     base_date=datetime.datetime.strptime(base_date, '%Y-%m-%d').date(),
                 )
-                CSV_FILE_DATA_LIST_OF_DICTS.append(elm_dict)
-            return CSV_FILE_DATA, CSV_FILE_DATA_LIST_OF_DICTS
+                csv_file_data_list_of_dicts.append(elm_dict)
+            return csv_file_data_list_of_dicts
     except FileNotFoundError:
         print(f'csv-file [{CSV_PATH}] not found :(')
 
@@ -175,7 +152,6 @@ def main():
     global connection
     global clear_database_records_count
     global new_records_count
-    global reader
     global count
     try:
         connection = psycopg2.connect(
@@ -187,10 +163,9 @@ def main():
         )
         cursor = connection.cursor()
 
-        reader, reader_dicts = read_csv_file()
-        if not reader:
-            print(f'Error in parsing file [{CSV_PATH}]:\n first cell value must be [#]\n '
-                  f'first string must be without any data\n run [check_csv_file] command ')
+        csv_file_data_dicts = read_csv_file()
+        if not csv_file_data_dicts:
+            print(f'Error in parsing file [{CSV_PATH}]: run [check_csv_file] command ')
         else:
             postgreSelectAll = 'select * from "dataLoader_questions" order by "id"'
             cursor.execute(postgreSelectAll)
@@ -199,10 +174,9 @@ def main():
                 #  Database is empty, doing filing
                 print('Database is empty. Loading DATA into it')
                 sleep(3)
-                for string in reader:
-                    if string[0] != '#':
-                        row_recording(string, connection, cursor)
-                        clear_database_records_count += 1
+                for row in csv_file_data_dicts:
+                    row_recording(row, connection, cursor)
+                    clear_database_records_count += 1
                 print(
                     f'Total row{"s" if clear_database_records_count > 1 else ""} {clear_database_records_count} successfully added')
             else:
@@ -213,7 +187,10 @@ def main():
                     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
                     , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
                     "approve", "date_ques_sub", "base_date")
-                for item in range(len(reader)):
+                for item in range(len(sqlData)):
+                    # temp = tuple(reader_dicts[item].values())
+                    if sqlData[item][0] == csv_file_data_dicts[item]['id']:
+
                     try:
                         if sqlData[item][0] == int(reader[item][0]):
                             #  Checking available rows for changes
@@ -221,16 +198,16 @@ def main():
                             updated_fields = []
                             for index in range(18):
                                 #  Checking data in columns and UPDATE if mismatch
-                                if sqlData[item][index] != reader_dicts[item][fields[index]]:
+                                if sqlData[item][index] != csv_file_data_dicts[item][fields[index]]:
                                     sql_update_query = f'Update "dataLoader_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
                                     cursor.execute(sql_update_query,
-                                                   (reader_dicts[item][fields[index]], reader_dicts[item][fields[0]]))
+                                                   (csv_file_data_dicts[item][fields[index]], csv_file_data_dicts[item][fields[0]]))
                                     connection.commit()
                                     updated = True
                                     updated_fields.append(fields[index])
                             if updated:
                                 print(
-                                    f'Record with ID "{reader_dicts[item][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
+                                    f'Record with ID "{csv_file_data_dicts[item][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
                                 count += 1
                     except IndexError:
                         #  If rows in CSV file more than in DB. Adding new rows
@@ -249,7 +226,7 @@ def main():
         if clear_database_records_count < len(reader):
             print(
                 f'Loading is not completed\nTotal records to load: [{len(reader)}]\nLoaded [{clear_database_records_count - 1}] records')
-        print('Database or connection error\n', error)
+        print('Database or connection error\n',error)
     finally:
         if connection:
             cursor.close()
@@ -258,6 +235,6 @@ def main():
 
 
 if __name__ == "__main__":
-    check_csv_file()
-    # main()
+    # check_csv_file()
+    main()
     # clear_db()
