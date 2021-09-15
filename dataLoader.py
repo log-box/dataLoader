@@ -6,7 +6,7 @@ from time import sleep
 import psycopg2
 from psycopg2 import Error
 
-USER = 'postgres'
+USER = 'postgress'
 PASSWORD = '1'
 DATABASE = 'dataloader'
 DATABASE_TABLE = "dataLoader_questions"
@@ -18,13 +18,14 @@ CSV_PATH = 'data.csv'
 connection = ''
 clear_database_records_count = 1
 new_records_count = 0
-count = 0
+records_updated_count = 0
+csv_file_data_dicts = []
 
 
 # https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
 
 def row_recording(row, connect, cursor):
-    #  Recording new row in DATABASE_TABLE
+    #  Recording new row in DATABASE_TABLE. Only DICT datastructures
     sql_query = 'INSERT INTO "dataLoader_questions" ("id", "question","linkOfPicture","rightAnswer",' \
                 '"commentForJudge","aboutQuestion","link","wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree",' \
                 '"themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user","approve",' \
@@ -153,7 +154,8 @@ def main():
     global connection
     global clear_database_records_count
     global new_records_count
-    global count
+    global records_updated_count
+    global csv_file_data_dicts
     try:
         connection = psycopg2.connect(
             database=DATABASE,
@@ -213,7 +215,7 @@ def main():
                     if updated:
                         print(
                             f'Record with ID "{csv_file_data_dicts[dict_index][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
-                        count += 1
+                        records_updated_count += 1
                     if dict_index is not None:
                         csv_file_data_dicts.pop(dict_index)
                 if len(csv_file_data_dicts) > 0:
@@ -221,8 +223,8 @@ def main():
                         row_recording(item, connection, cursor)
                         new_records_count += 1
                         print(f'New data with ID "{item["id"]}" successfully added')
-                if count > 0:
-                    print(f'Total records updated: {count}')
+                if records_updated_count > 0:
+                    print(f'Total records updated: {records_updated_count}')
                 else:
                     print('There no any changes in current questions. Data not updated.')
                 if new_records_count > 0:
