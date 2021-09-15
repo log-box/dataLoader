@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import csv
 import datetime
 from time import sleep
@@ -182,49 +183,44 @@ def main():
             else:
                 #  Data base not empty
                 print(f'Records in database: {len(sqlData)}')
-
+                #  Getting index of dict in list_of_dicts
                 def get_dict_num(iterable, value, key='id'):
                     for index, dict_ in enumerate(iterable):
-                        if dict_[key] == value:
-                            return index
-
-                for item in sqlData:
-                    dict_index = get_dict_num(csv_file_data_dicts, item[0])
+                        if dict_ is not None:
+                            if dict_[key] == value:
+                                return index
+                #  Find and update field(s) if changed
+                fields = (
+                    "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
+                    "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
+                    , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
+                    "approve", "date_ques_sub", "base_date")
+                for row in sqlData:
+                    dict_index = get_dict_num(csv_file_data_dicts, row[0])
+                    updated = False
+                    updated_fields = []
                     if dict_index is not None:
-                        print(csv_file_data_dicts[dict_index])
-
-                # fields = (
-                #     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
-                #     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
-                #     , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
-                #     "approve", "date_ques_sub", "base_date")
-                # for item in range(len(sqlData)):
-                #     # temp = tuple(reader_dicts[item].values())
-                #     if sqlData[item][0] == csv_file_data_dicts[item]['id']:
-                #
-                #     try:
-                #         if sqlData[item][0] == int(reader[item][0]):
-                #             #  Checking available rows for changes
-                #             updated = False
-                #             updated_fields = []
-                #             for index in range(18):
-                #                 #  Checking data in columns and UPDATE if mismatch
-                #                 if sqlData[item][index] != csv_file_data_dicts[item][fields[index]]:
-                #                     sql_update_query = f'Update "dataLoader_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
-                #                     cursor.execute(sql_update_query,
-                #                                    (csv_file_data_dicts[item][fields[index]], csv_file_data_dicts[item][fields[0]]))
-                #                     connection.commit()
-                #                     updated = True
-                #                     updated_fields.append(fields[index])
-                #             if updated:
-                #                 print(
-                #                     f'Record with ID "{csv_file_data_dicts[item][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
-                #                 count += 1
-                #     except IndexError:
-                #         #  If rows in CSV file more than in DB. Adding new rows
-                #         row_recording(reader[item], connection, cursor)
-                #         new_records_count += 1
-                #         print(f'New data with ID "{reader[item][0]}" successfully added')
+                        if csv_file_data_dicts[dict_index]['id'] == row[0]:
+                            for index in range(18):
+                                #  Checking data in columns and UPDATE if mismatch
+                                if row[index] != csv_file_data_dicts[dict_index][fields[index]]:
+                                    sql_update_query = f'Update "dataLoader_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
+                                    cursor.execute(sql_update_query,
+                                                   (csv_file_data_dicts[dict_index][fields[index]], csv_file_data_dicts[dict_index][fields[0]]))
+                                    connection.commit()
+                                    updated = True
+                                    updated_fields.append(fields[index])
+                    if updated:
+                        print(
+                            f'Record with ID "{csv_file_data_dicts[dict_index][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
+                        count += 1
+                    if dict_index is not None:
+                        csv_file_data_dicts.pop(dict_index)
+                if len(csv_file_data_dicts) > 0:
+                    for item in csv_file_data_dicts:
+                        row_recording(item, connection, cursor)
+                        new_records_count += 1
+                        print(f'New data with ID "{item["id"]}" successfully added')
                 if count > 0:
                     print(f'Total records updated: {count}')
                 else:
@@ -234,9 +230,9 @@ def main():
     except KeyError:
         print('Error in indexes\nCall developer +79200631679')
     except (Exception, Error) as error:
-        if clear_database_records_count < len(reader):
+        if clear_database_records_count < len(csv_file_data_dicts):
             print(
-                f'Loading is not completed\nTotal records to load: [{len(reader)}]\nLoaded [{clear_database_records_count - 1}] records')
+                f'Loading is not completed\nTotal records to load: [{len(csv_file_data_dicts)}]\nLoaded [{clear_database_records_count - 1}] records')
         print('Database or connection error\n',error)
     finally:
         if connection:
