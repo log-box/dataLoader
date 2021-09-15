@@ -22,7 +22,7 @@ count = 0
 
 # https://pythonru.com/biblioteki/operacii-insert-update-delete-v-postgresql
 
-def row_recording(row, connection, cursor):
+def row_recording(row, connect, cursor):
     #  Recording new row in DATABASE_TABLE
     sql_query = 'INSERT INTO "dataLoader_questions" ("id", "question","linkOfPicture","rightAnswer",' \
                 '"commentForJudge","aboutQuestion","link","wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree",' \
@@ -30,7 +30,7 @@ def row_recording(row, connection, cursor):
                 '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
     data = tuple(row.values())
     cursor.execute(sql_query, data)
-    connection.commit()
+    connect.commit()
 
 
 def clear_db():
