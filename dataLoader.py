@@ -18,7 +18,8 @@ from psycopg2 import Error
 USER = ''
 PASSWORD = ''
 DATABASE = 'dataloader'
-DATABASE_TABLE = "dataLoader_questions"
+# DATABASE_TABLE = "dataLoader_questions"
+DATABASE_TABLE = ""
 PORT = '5432'
 HOST = '127.0.0.1'
 CSV_PATH = 'data.csv'
@@ -84,14 +85,8 @@ def read_csv_file(path):
         print(f'csv-file [{CSV_PATH}] not found :(')
 
 
-@click.group()
+@click.group(context_settings={'help_option_names': ['-h', '--help']})
 def main():
-    pass
-
-
-@main.command(name='run')
-def fill_db():
-    global connection, clear_database_records_count, new_records_count, records_updated_count, csv_file_data_dicts
     global USER, PASSWORD, DATABASE, DATABASE_TABLE, PORT, HOST, CSV_PATH
     params = {
         'user': USER,
@@ -114,6 +109,34 @@ def fill_db():
     PORT = params['port']
     HOST = params['host']
     CSV_PATH = params['csv_file']
+    # pass
+
+
+@main.command(name='run')
+def fill_db():
+    global connection, clear_database_records_count, new_records_count, records_updated_count, csv_file_data_dicts
+    # global USER, PASSWORD, DATABASE, DATABASE_TABLE, PORT, HOST, CSV_PATH
+    # params = {
+    #     'user': USER,
+    #     'password': PASSWORD,
+    #     'database': DATABASE,
+    #     'table': DATABASE_TABLE,
+    #     'port': PORT,
+    #     'host': HOST,
+    #     'csv_file': CSV_PATH,
+    # }
+    #
+    # for key, value in params.items():
+    #     if value == '':
+    #         params[key] = input(
+    #             f'Input {"DB" if key in ("user", "password", "database", "table", "port", "host") else ""} {key}:\n')
+    # USER = params['user']
+    # PASSWORD = params['password']
+    # DATABASE = params['database']
+    # DATABASE_TABLE = params['table']
+    # PORT = params['port']
+    # HOST = params['host']
+    # CSV_PATH = params['csv_file']
 
     try:
         connection = psycopg2.connect(
@@ -129,7 +152,7 @@ def fill_db():
         if not csv_file_data_dicts:
             print(f'Error in parsing file [{CSV_PATH}]: run [check_csv_file] command ')
         else:
-            postgreSelectAll = 'select * from "dataLoader_questions" order by "id"'
+            postgreSelectAll = f'select * from "{DATABASE_TABLE}" order by "id"'
             cursor.execute(postgreSelectAll)
             sqlData = cursor.fetchall()
             if len(sqlData) == 0:
