@@ -18,8 +18,8 @@ from psycopg2 import Error
 USER = ''
 PASSWORD = ''
 DATABASE = 'dataloader'
-# DATABASE_TABLE = "dataLoader_questions"
-DATABASE_TABLE = ""
+DATABASE_TABLE = "dataLoader_questions"
+# DATABASE_TABLE = ""
 PORT = '5432'
 HOST = '127.0.0.1'
 CSV_PATH = 'data.csv'
@@ -70,8 +70,8 @@ def read_csv_file(path):
                     wrongAnswerOne=item[7],
                     wrongAnswerTwo=item[8],
                     wrongAnswerThree=item[9],
-                    themeOfQuestion=item[10],
-                    questionCategory=item[11],
+                    # themeOfQuestion=item[10],
+                    # questionCategory=item[11],
                     sectionOfQuestion=item[12],
                     complexityOfQuestion=int(item[14]),
                     user=item[16],
@@ -154,10 +154,15 @@ def fill_db():
                                 return index
 
                 #  Find and update field(s) if changed
+                # fields = (
+                #     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
+                #     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
+                #     , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
+                #     "approve", "date_ques_sub", "base_date")
                 fields = (
                     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
                     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
-                    , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
+                    , "sectionOfQuestion", "complexityOfQuestion",
                     "approve", "date_ques_sub", "base_date")
                 for row in sqlData:
                     dict_index = get_dict_num(csv_file_data_dicts, row[0])
@@ -165,7 +170,8 @@ def fill_db():
                     updated_fields = []
                     if dict_index is not None:
                         if csv_file_data_dicts[dict_index]['id'] == row[0]:
-                            for index in range(18):
+                            # for index in range(18):
+                            for index in range(16):
                                 #  Checking data in columns and UPDATE if mismatch
                                 if row[index] != csv_file_data_dicts[dict_index][fields[index]]:
                                     sql_update_query = f'Update "dataLoader_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
@@ -256,7 +262,7 @@ def check_csv_file():
         cursor.execute(sql_structure_request)
         sql_table_data_structure = cursor.fetchall()
         character_maximum_length = dict([item for item in sql_table_data_structure])
-        file_dict_data = read_csv_file()
+        file_dict_data = read_csv_file(CSV_PATH)
         if not file_dict_data:
             return print('CSV file error in first row. Check first cell value, must be [#]')
         errors = []
