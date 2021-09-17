@@ -115,28 +115,6 @@ def main():
 @main.command(name='run')
 def fill_db():
     global connection, clear_database_records_count, new_records_count, records_updated_count, csv_file_data_dicts
-    # global USER, PASSWORD, DATABASE, DATABASE_TABLE, PORT, HOST, CSV_PATH
-    # params = {
-    #     'user': USER,
-    #     'password': PASSWORD,
-    #     'database': DATABASE,
-    #     'table': DATABASE_TABLE,
-    #     'port': PORT,
-    #     'host': HOST,
-    #     'csv_file': CSV_PATH,
-    # }
-    #
-    # for key, value in params.items():
-    #     if value == '':
-    #         params[key] = input(
-    #             f'Input {"DB" if key in ("user", "password", "database", "table", "port", "host") else ""} {key}:\n')
-    # USER = params['user']
-    # PASSWORD = params['password']
-    # DATABASE = params['database']
-    # DATABASE_TABLE = params['table']
-    # PORT = params['port']
-    # HOST = params['host']
-    # CSV_PATH = params['csv_file']
 
     try:
         connection = psycopg2.connect(
