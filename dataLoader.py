@@ -67,8 +67,8 @@ def read_csv_file(path):
             category_list = csv_file_data.pop(0)
             csv_file_data_list_of_dicts = []
             for item in csv_file_data:
-                date_ques_sub = datetime.datetime.strptime(item[17], '%d.%m.%Y').strftime('%Y-%m-%d')
-                base_date = datetime.datetime.strptime(item[20], '%d.%m.%Y').strftime('%Y-%m-%d')
+                date_ques_sub = datetime.datetime.strptime(item[12], '%d.%m.%Y').strftime('%Y-%m-%d')
+                base_date = datetime.datetime.strptime(item[15], '%d.%m.%Y').strftime('%Y-%m-%d')
                 elm_dict = dict(
                     id=int(item[0]),
                     user=item[11],
@@ -83,8 +83,9 @@ def read_csv_file(path):
                     link=item[6],
                     # themeOfQuestion=item[10],
                     # questionCategory=item[11],
-                    sectionOfQuestion=item[12],
-                    complexityOfQuestion=int(item[14]),
+                    # sectionOfQuestion=item[12],
+                    sectionOfQuestion='разделOLD',
+                    complexityOfQuestion=int(item[10]),
                     approve=1,
                     date_ques_sub=datetime.datetime.strptime(date_ques_sub, '%Y-%m-%d').date(),
                     base_date=datetime.datetime.strptime(base_date, '%Y-%m-%d').date(),
