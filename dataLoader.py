@@ -15,14 +15,23 @@ from psycopg2 import Error
 # HOST = '127.0.0.1'
 # CSV_PATH = 'data.csv'
 
-USER = ''
-PASSWORD = ''
+"""
+    sql_query = 'INSERT INTO "quizapp_questions" ("id", "question","linkOfPicture","rightAnswer",' \
+                '"commentForJudge","aboutQuestion","link","wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree",' \
+                '"themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user","approve",' \
+                '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
+"""
+
+
+USER = 'postgres'
+PASSWORD = '1'
 DATABASE = 'dataloader'
-DATABASE_TABLE = "dataLoader_questions"
+DATABASE_TABLE = "quizapp_questions"
 # DATABASE_TABLE = ""
 PORT = '5432'
 HOST = '127.0.0.1'
-CSV_PATH = 'data.csv'
+# CSV_PATH = 'data.csv'
+CSV_PATH = 'data_new.csv'
 
 connection = ''
 clear_database_records_count = 1
@@ -35,10 +44,10 @@ csv_file_data_dicts = []
 
 def row_recording(row, connect, cursor):
     #  Recording new row in DATABASE_TABLE. Only DICT datastructures
-    sql_query = 'INSERT INTO "dataLoader_questions" ("id", "question","linkOfPicture","rightAnswer",' \
-                '"commentForJudge","aboutQuestion","link","wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree",' \
-                '"themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user","approve",' \
-                '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
+    sql_query = f'INSERT INTO "quizapp_questions" ("id", "user", "question","linkOfPicture","rightAnswer",' \
+                '"wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree","commentForJudge","aboutQuestion","link",' \
+                '"sectionOfQuestion","complexityOfQuestion","approve",' \
+                '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
     data = tuple(row.values())
     cursor.execute(sql_query, data)
     connect.commit()
@@ -54,27 +63,28 @@ def read_csv_file(path):
         if csv_file_data[0][0] != '#':
             return False
         else:
-            csv_file_data.pop(0)
+            themes_list = csv_file_data.pop(0)
+            category_list = csv_file_data.pop(0)
             csv_file_data_list_of_dicts = []
             for item in csv_file_data:
                 date_ques_sub = datetime.datetime.strptime(item[17], '%d.%m.%Y').strftime('%Y-%m-%d')
                 base_date = datetime.datetime.strptime(item[20], '%d.%m.%Y').strftime('%Y-%m-%d')
                 elm_dict = dict(
                     id=int(item[0]),
+                    user=item[11],
                     question=item[1],
                     linkOfPicture=None,
                     rightAnswer=item[3],
-                    commentForJudge=item[4],
-                    aboutQuestion=item[5],
-                    link=item[6],
                     wrongAnswerOne=item[7],
                     wrongAnswerTwo=item[8],
                     wrongAnswerThree=item[9],
+                    commentForJudge=item[4],
+                    aboutQuestion=item[5],
+                    link=item[6],
                     # themeOfQuestion=item[10],
                     # questionCategory=item[11],
                     sectionOfQuestion=item[12],
                     complexityOfQuestion=int(item[14]),
-                    user=item[16],
                     approve=1,
                     date_ques_sub=datetime.datetime.strptime(date_ques_sub, '%Y-%m-%d').date(),
                     base_date=datetime.datetime.strptime(base_date, '%Y-%m-%d').date(),
@@ -174,7 +184,7 @@ def fill_db():
                             for index in range(16):
                                 #  Checking data in columns and UPDATE if mismatch
                                 if row[index] != csv_file_data_dicts[dict_index][fields[index]]:
-                                    sql_update_query = f'Update "dataLoader_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
+                                    sql_update_query = f'Update "quizapp_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
                                     cursor.execute(sql_update_query,
                                                    (csv_file_data_dicts[dict_index][fields[index]],
                                                     csv_file_data_dicts[dict_index][fields[0]]))
@@ -229,7 +239,7 @@ def clear_db():
         sleep(5)
         userInput = input('Are you sure?[y/n]\n')
         if userInput.lower() == 'y':
-            postgreDeleteAll = 'TRUNCATE "dataLoader_questions" RESTART IDENTITY CASCADE;'
+            postgreDeleteAll = 'TRUNCATE "quizapp_questions" RESTART IDENTITY CASCADE;'
             cursor.execute(postgreDeleteAll)
             connection.commit()
             print(f'!!! Database "{DATABASE}" was cleaned !!!')
@@ -258,9 +268,10 @@ def check_csv_file():
             port=PORT
         )
         cursor = connection.cursor()
-        sql_structure_request = "select column_name,  character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name ='dataLoader_questions';"
+        sql_structure_request = "select column_name,  character_maximum_length from INFORMATION_SCHEMA.COLUMNS where table_name ='quizapp_questions';"
         cursor.execute(sql_structure_request)
         sql_table_data_structure = cursor.fetchall()
+        print(sql_table_data_structure)
         character_maximum_length = dict([item for item in sql_table_data_structure])
         file_dict_data = read_csv_file(CSV_PATH)
         if not file_dict_data:
