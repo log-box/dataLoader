@@ -44,18 +44,31 @@ csv_file_data_dicts = []
 
 def row_recording(row, connect, cursor):
     #  Recording new row in DATABASE_TABLE. Only DICT datastructures
+    themes = row.pop('themeOfQuestion')
+    categories = row.pop('questionCategory')
+    question_id = row['id']
     sql_query = f'INSERT INTO "quizapp_questions" ("id", "user", "question","linkOfPicture","rightAnswer",' \
                 '"wrongAnswerOne","wrongAnswerTwo","wrongAnswerThree","commentForJudge","aboutQuestion","link",' \
                 '"sectionOfQuestion","complexityOfQuestion","approve",' \
                 '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
     data = tuple(row.values())
     cursor.execute(sql_query, data)
+    while len(themes) > 0:
+        data = [themes.pop(), question_id ]
+        sql_query = 'INSERT INTO "quizapp_questionsthemes" ("theme", "question_id") VALUES (%s,%s);'
+        cursor.execute(sql_query, data)
+    while len(categories) > 0:
+        data = [categories.pop(), question_id]
+        sql_query = 'INSERT INTO "quizapp_questionsthemescategory" ("questionCategory", "question_id") VALUES (%s,%s);'
+        cursor.execute(sql_query, data)
     connect.commit()
 
 
 def read_csv_file(path):
     #  Reading CSV file and return list of lists and list of dicts
     csv_path = path
+    themes_dict = dict()
+    category_dict = dict()
     try:
         with open(csv_path, "r", encoding='utf-8', newline='') as f_obj:
             reader = csv.reader(f_obj, skipinitialspace=True)
@@ -64,11 +77,25 @@ def read_csv_file(path):
             return False
         else:
             themes_list = csv_file_data.pop(0)
+            for i in range(len(themes_list)):
+                if themes_list[i] != '' and themes_list[i] != '#':
+                    themes_dict[f'{i}'] = themes_list[i]
             category_list = csv_file_data.pop(0)
+            for i in range(17, len(category_list)):
+                if category_list[i] != '' and category_list[i] != '#':
+                    category_dict[f'{i}'] = category_list[i]
             csv_file_data_list_of_dicts = []
             for item in csv_file_data:
                 date_ques_sub = datetime.datetime.strptime(item[12], '%d.%m.%Y').strftime('%Y-%m-%d')
                 base_date = datetime.datetime.strptime(item[15], '%d.%m.%Y').strftime('%Y-%m-%d')
+                themes = []
+                categories = []
+                for i in range(16, 37):
+                    if item[i] != '':
+                        if str(i) in themes_dict:
+                            themes.append(themes_dict[str(i)])
+                        if str(i) in category_dict:
+                            categories.append(category_dict[str(i)])
                 elm_dict = dict(
                     id=int(item[0]),
                     user=item[11],
@@ -81,8 +108,8 @@ def read_csv_file(path):
                     commentForJudge=item[4],
                     aboutQuestion=item[5],
                     link=item[6],
-                    # themeOfQuestion=item[10],
-                    # questionCategory=item[11],
+                    themeOfQuestion=themes,
+                    questionCategory=categories,
                     # sectionOfQuestion=item[12],
                     sectionOfQuestion='разделOLD',
                     complexityOfQuestion=int(item[10]),
@@ -165,16 +192,11 @@ def fill_db():
                                 return index
 
                 #  Find and update field(s) if changed
-                # fields = (
-                #     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
-                #     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
-                #     , "themeOfQuestion", "questionCategory", "sectionOfQuestion", "complexityOfQuestion",
-                #     "approve", "date_ques_sub", "base_date")
                 fields = (
                     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
                     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
-                    , "sectionOfQuestion", "complexityOfQuestion",
-                    "approve", "date_ques_sub", "base_date")
+                    , "complexityOfQuestion","approve", "date_ques_sub", "base_date", "sectionOfQuestion")
+
                 for row in sqlData:
                     dict_index = get_dict_num(csv_file_data_dicts, row[0])
                     updated = False
