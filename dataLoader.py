@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import csv
 import datetime
+import itertools
 from time import sleep
 
 import click
@@ -21,7 +22,6 @@ from psycopg2 import Error
                 '"themeOfQuestion","questionCategory","sectionOfQuestion","complexityOfQuestion","user","approve",' \
                 '"date_ques_sub","base_date") VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s); '
 """
-
 
 USER = 'postgres'
 PASSWORD = '1'
@@ -54,7 +54,7 @@ def row_recording(row, connect, cursor):
     data = tuple(row.values())
     cursor.execute(sql_query, data)
     while len(themes) > 0:
-        data = [themes.pop(), question_id ]
+        data = [themes.pop(), question_id]
         sql_query = 'INSERT INTO "quizapp_questionsthemes" ("theme", "question_id") VALUES (%s,%s);'
         cursor.execute(sql_query, data)
     while len(categories) > 0:
@@ -111,7 +111,7 @@ def read_csv_file(path):
                     themeOfQuestion=themes,
                     questionCategory=categories,
                     # sectionOfQuestion=item[12],
-                    sectionOfQuestion='разделOLD',
+                    sectionOfQuestion='',
                     complexityOfQuestion=int(item[10]),
                     approve=1,
                     date_ques_sub=datetime.datetime.strptime(date_ques_sub, '%Y-%m-%d').date(),
@@ -186,41 +186,60 @@ def fill_db():
 
                 #  Getting index of dict in list_of_dicts
                 def get_dict_num(iterable, value, key='id'):
-                    for index, dict_ in enumerate(iterable):
+                    for idx, dict_ in enumerate(iterable):
                         if dict_ is not None:
                             if dict_[key] == value:
-                                return index
+                                return idx
+                def update_theme_category(question_id, idx):
+                    postgreSelectThemes = f'select "theme", "id" from "quizapp_questionsthemes" where quizapp_questionsthemes.question_id = {question_id};'
+                    cursor.execute(postgreSelectThemes)
+                    themesSQL = list(map(list,cursor.fetchall()))
+                    postgreSelectCategories = f'select "questionCategory" from "quizapp_questionsthemescategory" where quizapp_questionsthemescategory.question_id = {question_id};'
+                    cursor.execute(postgreSelectCategories)
+                    categorySQL = cursor.fetchall()
+                    if len(themesSQL) >= len(csv_file_data_dicts[idx]['themeOfQuestion']):
+                        while len(themesSQL) > 0:
+                            sql_item = themesSQL.pop()
+                            a = csv_file_data_dicts[idx]['themeOfQuestion'].index(sql_item[0])
+                            if sql_item[0] not in csv_file_data_dicts[idx]['themeOfQuestion']:
+                                sql_update_query = f'DELETE FROM "quizapp_questionsthemes" where "id" = %s'
+                                # sql_update_query = f'Update "quizapp_questionsthemes" set "theme" = %s where question_id = %s'
+                                cursor.execute(sql_update_query,(sql_item[1],))
+                                connection.commit()
+                                print(f'delete {sql_item}')
+                    print('done')
 
-                #  Find and update field(s) if changed
+                #  Find and update field(s) if it(`s) changed
                 fields = (
                     "id", "user", "question", "linkOfPicture", "rightAnswer", "wrongAnswerOne", "wrongAnswerTwo",
                     "wrongAnswerThree", "commentForJudge", "aboutQuestion", "link"
-                    , "complexityOfQuestion","approve", "date_ques_sub", "base_date", "sectionOfQuestion")
-
+                    , "complexityOfQuestion", "approve", "date_ques_sub", "base_date", "sectionOfQuestion")
                 for row in sqlData:
                     dict_index = get_dict_num(csv_file_data_dicts, row[0])
+                    update_theme_category(row[0], dict_index)
                     updated = False
                     updated_fields = []
                     if dict_index is not None:
-                        if csv_file_data_dicts[dict_index]['id'] == row[0]:
-                            # for index in range(18):
-                            for index in range(16):
-                                #  Checking data in columns and UPDATE if mismatch
-                                if row[index] != csv_file_data_dicts[dict_index][fields[index]]:
-                                    sql_update_query = f'Update "quizapp_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
-                                    cursor.execute(sql_update_query,
-                                                   (csv_file_data_dicts[dict_index][fields[index]],
-                                                    csv_file_data_dicts[dict_index][fields[0]]))
-                                    connection.commit()
-                                    updated = True
-                                    updated_fields.append(fields[index])
+                        for index in range(16):
+                            #  Checking data in columns and UPDATE if mismatch
+
+                            if row[index] != csv_file_data_dicts[dict_index][fields[index]]:
+                                sql_update_query = f'Update "quizapp_questions" set "{fields[index]}" = %s where {fields[0]} = %s'
+                                cursor.execute(sql_update_query,
+                                               (csv_file_data_dicts[dict_index][fields[index]],
+                                                csv_file_data_dicts[dict_index][fields[0]]))
+                                connection.commit()
+                                updated = True
+                                updated_fields.append(fields[index])
                     if updated:
                         print(
                             f'Record with ID "{csv_file_data_dicts[dict_index][fields[0]]}" updated in "{updated_fields}" field{"s" if len(updated_fields) > 1 else ""}.')
                         records_updated_count += 1
                     if dict_index is not None:
+                        #  Remove added items from the list
                         csv_file_data_dicts.pop(dict_index)
                 if len(csv_file_data_dicts) > 0:
+                    #  Adding new records which miss in database (have`t ID in DB)
                     for item in csv_file_data_dicts:
                         row_recording(item, connection, cursor)
                         new_records_count += 1
@@ -324,4 +343,3 @@ def check_csv_file():
 
 if __name__ == "__main__":
     main()
-    # clear_db()
