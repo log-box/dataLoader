@@ -196,7 +196,7 @@ def fill_db():
                     themesSQL = list(map(list,cursor.fetchall()))
                     postgreSelectCategories = f'select "questionCategory" from "quizapp_questionsthemescategory" where quizapp_questionsthemescategory.question_id = {question_id};'
                     cursor.execute(postgreSelectCategories)
-                    categorySQL = cursor.fetchall()
+                    categorySQL = list(map(list,cursor.fetchall()))
                     if len(themesSQL) >= len(csv_file_data_dicts[idx]['themeOfQuestion']):
                         while len(themesSQL) > 0:
                             sql_item = themesSQL.pop()
