@@ -1,0 +1,6 @@
+error in row [244] field [aboutQuestion] with [2173] witch more than [2000] char length in database field
+error in row [245] field [aboutQuestion] with [2637] witch more than [2000] char length in database field
+error in row [257] field [aboutQuestion] with [2845] witch more than [2000] char length in database field
+error in row [259] field [aboutQuestion] with [2812] witch more than [2000] char length in database field
+error in row [260] field [aboutQuestion] with [2319] witch more than [2000] char length in database field
+error in row [261] field [aboutQuestion] with [2392] witch more than [2000] char length in database field
