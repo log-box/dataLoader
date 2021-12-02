@@ -7,13 +7,14 @@ import click
 import psycopg2
 from psycopg2 import Error
 
-USER = ''
-PASSWORD = ''
-DATABASE = ''
+USER = 'postgres'
+PASSWORD = '1'
+DATABASE = 'dataloader'
 DATABASE_TABLE = "quizapp_questions"
 PORT = '5432'
-HOST = ''
-CSV_PATH = ''
+HOST = '127.0.0.1'
+CSV_PATH = 'new_data.csv'
+#
 
 connection = ''
 clear_database_records_count = 1
@@ -66,8 +67,10 @@ def read_csv_file(path):
                     category_dict[f'{i}'] = category_list[i]
             csv_file_data_list_of_dicts = []
             for item in csv_file_data:
-                date_ques_sub = datetime.datetime.strptime(item[12], '%d.%m.%Y').strftime('%Y-%m-%d')
-                base_date = datetime.datetime.strptime(item[15], '%d.%m.%Y').strftime('%Y-%m-%d')
+                if item[12] != '':
+                    date_ques_sub = datetime.datetime.strptime(item[12], '%d.%m.%Y').strftime('%Y-%m-%d')
+                if item[15] != '':
+                    base_date = datetime.datetime.strptime(item[15], '%d.%m.%Y').strftime('%Y-%m-%d')
                 themes = []
                 categories = []
                 for i in range(16, 37):
@@ -330,13 +333,29 @@ def clear_db():
         )
         cursor = connection.cursor()
         print('!!! WARNING !!!\nTHIS OPERATION WILL DELET ALL DATA IN DATABASE!\n')
-        sleep(5)
+        sleep(1)
         userInput = input('Are you sure?[y/n]\n')
         if userInput.lower() == 'y':
-            postgreDeleteAll = 'TRUNCATE "quizapp_questions" RESTART IDENTITY CASCADE;'
-            cursor.execute(postgreDeleteAll)
+            del_quizapp_questions = 'DELETE FROM "quizapp_questions"; ALTER SEQUENCE quizapp_questions_id_seq RESTART WITH 1'
+            del_quizapp_questionsthemes = 'DELETE FROM "quizapp_questionsthemes"; ALTER SEQUENCE quizapp_questionsthemes_id_seq RESTART WITH 1'
+            del_quizapp_questionsthemescategory = 'DELETE FROM "quizapp_questionsthemescategory"; ALTER SEQUENCE quizapp_questionsthemescategory_id_seq RESTART WITH 1'
+            try:
+                print('Очищаем таблицу "quizapp_questionsthemescategory"')
+                cursor.execute(del_quizapp_questionsthemescategory)
+            except:
+                print('Что-то не так с таблицей "quizapp_questionsthemescategory"')
+            try:
+                print('Очищаем таблицу "quizapp_questionsthemes"')
+                cursor.execute(del_quizapp_questionsthemes)
+            except:
+                print('Что-то не так с таблицей "quizapp_questions"')
+            try:
+                print('Очищаем таблицу "quizapp_questions"')
+                cursor.execute(del_quizapp_questions)
+            except Error as err:
+                print('Что-то не так с таблицей "quizapp_questions"', err)
             connection.commit()
-            print(f'!!! Database "{DATABASE}" was cleaned !!!')
+            # print(f'!!! Database "{DATABASE}" was cleaned !!!')
         else:
             print('Operation was canceled!!! DATA was NOT deleted!')
 
